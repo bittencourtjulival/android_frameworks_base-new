@@ -77,7 +77,6 @@ import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -158,8 +157,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
-import kotlin.math.abs
 
 @SuppressLint("ValidFragment")
 class QSFragmentCompose
@@ -1136,7 +1133,6 @@ private class FrameLayoutTouchPassthrough(
     }
 
     val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
-    var downX = 0f
     var downY = 0f
     var preventingIntercept = false
 
@@ -1165,31 +1161,31 @@ private class FrameLayoutTouchPassthrough(
         return super.onTouchEvent(event)
     }
 
-    override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
-        val actionMasked = event.actionMasked
-        when (actionMasked) {
+    override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
+        // If there's a touch on this view and we can scroll down, we don't want to be intercepted
+        val action = ev.actionMasked
+
+        when (action) {
             MotionEvent.ACTION_DOWN -> {
                 preventingIntercept = false
+                // If we can scroll down, make sure none of our parents intercepts us.
                 if (canScrollForwardQs()) {
                     preventingIntercept = true
                     parent?.requestDisallowInterceptTouchEvent(true)
                 }
-                downY = event.y
-                downX = event.x
+                downY = ev.y
             }
+
             MotionEvent.ACTION_MOVE -> {
-                val y = event.y
-                val x = event.x
-                val dy = y - downY
-                val dx = x - downX
-                val isUpwardSwipe = dy < -touchSlop && !canScrollForwardQs()
-                val isVertical = abs(dx) < abs(dy)
-                if (isUpwardSwipe && isVertical) {
+                val y = ev.y.toInt()
+                val yDiff: Float = y - downY
+                if (yDiff < -touchSlop && !canScrollForwardQs()) {
+                    // Intercept touches that are overscrolling.
                     return true
                 }
             }
         }
-        return super.onInterceptTouchEvent(event)
+        return super.onInterceptTouchEvent(ev)
     }
 }
 

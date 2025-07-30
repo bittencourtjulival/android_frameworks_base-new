@@ -161,7 +161,13 @@ constructor(
             traceName = "qqsHeaderHeight",
             initialValue = 0,
             source =
-                configurationInteractor.dimensionPixelSize(R.dimen.qqs_status_bar_height),
+                configurationInteractor.onAnyConfigurationChange.map {
+                    if (LargeScreenUtils.shouldUseLargeScreenShadeHeader(resources)) {
+                        0
+                    } else {
+                        largeScreenHeaderHelper.getLargeScreenHeaderHeight()
+                    }
+                },
         )
 
     val qqsBottomPadding by
@@ -497,30 +503,8 @@ constructor(
         }
         qsMediaHost.apply {
             expansion = MediaHostState.EXPANDED
-            showsOnlyActiveMedia = true
+            showsOnlyActiveMedia = false
             init(LOCATION_QS)
-        }
-        updateMediaHostVisibility(qsMediaHost)
-    }
-
-    fun updateMediaHostVisibility(mediaHost: MediaHost): Flow<Boolean> {
-        return callbackFlow {
-            val originalVisible = mediaHost.visible
-
-            trySend(!originalVisible)
-            trySend(originalVisible)
-
-            val listener: (Boolean) -> Unit = { newVisibleState ->
-                trySend(newVisibleState).isSuccess
-            }
-
-            mediaHost.addVisibilityChangeListener(listener)
-
-            awaitClose {
-                mediaHost.removeVisibilityChangeListener(listener)
-            }
-        }.onStart {
-            emit(mediaHost.visible)
         }
     }
 

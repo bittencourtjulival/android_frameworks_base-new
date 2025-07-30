@@ -559,13 +559,9 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
 
     private void handleBlurSupportedChanged(boolean isBlurSupported) {
         this.mIsBlurSupported = isBlurSupported;
-        updateScrimsAndDispatch();
-    }
-
-    private void updateScrimsAndDispatch() {
         if (Flags.bouncerUiRevamp()) {
             updateDefaultScrimAlphas();
-            if (mIsBlurSupported) {
+            if (isBlurSupported) {
                 ScrimState.BOUNCER_SCRIMMED.setNotifBlurRadius(mBlurConfig.getMaxBlurRadiusPx());
             } else {
                 ScrimState.BOUNCER_SCRIMMED.setNotifBlurRadius(0f);
@@ -1680,7 +1676,6 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
     private void onThemeChanged() {
         updateThemeColors();
         scheduleUpdate();
-        updateScrimsAndDispatch();
     }
 
     @Override
